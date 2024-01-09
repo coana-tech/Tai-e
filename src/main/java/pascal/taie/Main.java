@@ -24,6 +24,8 @@ package pascal.taie;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import coana.SingletonDataHolder;
 import pascal.taie.analysis.AnalysisManager;
 import pascal.taie.config.AnalysisConfig;
 import pascal.taie.config.AnalysisPlanner;
@@ -50,6 +52,7 @@ public class Main {
     public static void main(String... args) {
         Timer.runAndCount(() -> {
             Options options = processArgs(args);
+            SingletonDataHolder.getInstance().setAppClasses(options.getInputClasses());
             LoggerConfigs.setOutput(options.getOutputDir());
             Plan plan = processConfigs(options);
             if (plan.analyses().isEmpty()) {
