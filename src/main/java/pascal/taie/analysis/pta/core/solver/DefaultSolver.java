@@ -463,31 +463,35 @@ public class DefaultSolver implements Solver {
      * @param pts  set of new discovered objects pointed by the variable.
      */
     private void processCall(CSVar recv, PointsToSet pts) {
-        Context context = recv.getContext();
-        Var var = recv.getVar();
-        for (Invoke callSite : var.getInvokes()) {
-            pts.forEach(recvObj -> {
-                // resolve callee
-                JMethod callee = CallGraphs.resolveCallee(
-                        recvObj.getObject().getType(), callSite);
-                if (callee != null) {
-                    // select context
-                    CSCallSite csCallSite = csManager.getCSCallSite(context, callSite);
-                    Context calleeContext = contextSelector.selectContext(
-                            csCallSite, recvObj, callee);
-                    // build call edge
-                    CSMethod csCallee = csManager.getCSMethod(calleeContext, callee);
-                    addCallEdge(new Edge<>(CallGraphs.getCallKind(callSite),
-                            csCallSite, csCallee));
-                    // pass receiver object to *this* variable
-                    if (!isIgnored(callee)) {
-                        addVarPointsTo(calleeContext, callee.getIR().getThis(),
-                                recvObj);
+        try {
+            Context context = recv.getContext();
+            Var var = recv.getVar();
+            for (Invoke callSite : var.getInvokes()) {
+                pts.forEach(recvObj -> {
+                    // resolve callee
+                    JMethod callee = CallGraphs.resolveCallee(
+                            recvObj.getObject().getType(), callSite);
+                    if (callee != null) {
+                        // select context
+                        CSCallSite csCallSite = csManager.getCSCallSite(context, callSite);
+                        Context calleeContext = contextSelector.selectContext(
+                                csCallSite, recvObj, callee);
+                        // build call edge
+                        CSMethod csCallee = csManager.getCSMethod(calleeContext, callee);
+                        addCallEdge(new Edge<>(CallGraphs.getCallKind(callSite),
+                                csCallSite, csCallee));
+                        // pass receiver object to *this* variable
+                        if (!isIgnored(callee)) {
+                            addVarPointsTo(calleeContext, callee.getIR().getThis(),
+                                    recvObj);
+                        }
+                    } else {
+                        plugin.onUnresolvedCall(recvObj, context, callSite);
                     }
-                } else {
-                    plugin.onUnresolvedCall(recvObj, context, callSite);
-                }
-            });
+                });
+            }
+        } catch (Exception e) {
+            // e.printStackTrace();
         }
     }
 
@@ -505,13 +509,15 @@ public class DefaultSolver implements Solver {
                 InvokeExp invokeExp = callSite.getInvokeExp();
                 // pass arguments to parameters
                 for (int i = 0; i < invokeExp.getArgCount(); ++i) {
-                    Var arg = invokeExp.getArg(i);
-                    if (propTypes.isAllowed(arg)) {
-                        Var param = callee.getIR().getParam(i);
-                        CSVar argVar = csManager.getCSVar(callerCtx, arg);
-                        CSVar paramVar = csManager.getCSVar(calleeCtx, param);
-                        addPFGEdge(argVar, paramVar, FlowKind.PARAMETER_PASSING);
-                    }
+                    try {
+                        Var arg = invokeExp.getArg(i);
+                        if (propTypes.isAllowed(arg)) {
+                            Var param = callee.getIR().getParam(i);
+                            CSVar argVar = csManager.getCSVar(callerCtx, arg);
+                            CSVar paramVar = csManager.getCSVar(calleeCtx, param);
+                            addPFGEdge(argVar, paramVar, FlowKind.PARAMETER_PASSING);
+                        }
+                    } catch (Exception e) {}
                 }
                 // pass results to LHS variable
                 Var lhs = callSite.getResult();

@@ -61,9 +61,14 @@ public class TypeFilter implements Transfer {
     }
 
     private boolean isAssignable(Type from, Type to) {
-        return (from instanceof NullType)
+        try {
+            return (from instanceof NullType)
                 ? to instanceof ReferenceType
                 : typeSystem.isSubtype(to, from);
+        } catch (Exception e) {
+            // e.printStackTrace();
+            return false;
+        }
     }
 
     @Override

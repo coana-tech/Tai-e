@@ -50,6 +50,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -252,6 +253,8 @@ public class SootWorldBuilder extends AbstractWorldBuilder {
     }
 
     private static void runSoot(String[] args) {
+        // filter out arguments where Tai-e has appended the shell that runs it, i.e., /bin/sh or /tmp.sh if run from a shell script
+        args = Arrays.stream(args).filter(a -> !a.contains("/bin/sh")).toArray(String[]::new);
         try {
             soot.Main.v().run(args);
         } catch (SootResolver.SootClassNotFoundException e) {

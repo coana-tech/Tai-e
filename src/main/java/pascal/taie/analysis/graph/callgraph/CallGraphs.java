@@ -158,7 +158,7 @@ public final class CallGraphs {
                 MethodRef ref = invoke.getMethodRef();
                 String target = ref.getDeclaringClass().getName() + "." + ref.getName();
                 int n = getInvokeNumber(target, counter);
-                String rep = caller + "/" + target + "/" + n;
+                String rep = caller + "/" + target + "/" + n + "/" + s.getLineNumber();
                 invokeReps.put(invoke, rep);
             }
         });
